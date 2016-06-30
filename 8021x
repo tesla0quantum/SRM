@@ -1,0 +1,55 @@
+!
+! Switch configuration
+!
+!--------------------------------------
+! VLANs
+vlan 10   !Gateway 1
+vlan 20   !Gateway 2
+vlan 30   !Authenticator VLAN
+vlan 40   !Not authorized VLAN
+!--------------------------------------
+! Local user database
+username xxx password yyy
+
+!--------------------------------------
+int f1/11   !To Gateway 1
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+no shut
+
+int f1/12   !To Gateway 2
+switchport mode access
+switchport access vlan 20
+spanning-tree portfast
+no shut
+
+int vlan 30   !Authenticator VLAN IP address configuration
+ip address 192.168.100.100 255.255.255.0
+!---------------------------------------
+en
+conf t
+aaa new-model   !No TACACS -> RADIUS
+dot1x system-auth-control
+aaa authentication dot1x default group RADIUS
+aaa accounting dot1x default start-stop group RADIUS
+radius-server host 192.168.100.200 auth-port 1812 acct-port 1813 key class
+
+aaa authorization network default group RADIUS if-authenticated
+! -- or this one
+aaa authorization network RADIUS if-authenticated
+!---------------------------------------
+int f1/0    !To Client PC
+switchport mode access
+dot1x port-control auto
+dot1x pae authenticator
+dot1x auth-fail max-attempts 1
+dot1x auth-fail vlan 40
+!---------------------------------------
+
+! Management of equipment
+aaa group server radius RADIUS
+crypto key generate rsa general-keys modulus 1024
+line vty 0 15
+transport input ssh
+login authentication default
