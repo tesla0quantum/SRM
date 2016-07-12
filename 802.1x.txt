@@ -1,0 +1,59 @@
+Cisco Switch Configuration
+=============================
+
+en conf t
+
+interface prema RADIUS server
+-----------------------------
+int fx/x
+ip add IPAdresa
+switchport mode access
+switchport access vlan 30 (vlan u kojem je RADIUS server)
+spanning-tree portfast
+
+vlan-ovi
+------------------------------------
+int vlan10
+int vlan20
+int vlan30
+int vlan40
+
+ip adresa vlan-a u kojem je RADIUS server
+-----------------------------------------
+int vlan30
+ip add IPAdresa
+
+konfiguracija AAA
+---------------------------------------
+en
+conf t
+aaa new-model
+dot1x system-auth-control
+aaa authentication dot1x default group radius
+aaa accounting dot1x default start-stop group radius
+radius-server host IPAdresaServera auth-port 1812 acct-port 1813 key cisco
+
+aaa authorization network default group radius if-authenticated
+ili
+aaa authorization network radius if-authenticated
+
+* na razini interface-a [port postaje authenticator]
+------------------------------------------------------
+int f1/0 !Tu je spojeno racunalo
+switchport mode access
+dot1x port-control auto
+dot1x pae authenticator
+dot1x auth-fail max-attempts 1
+dot1x auth-fail vlan 40
+
+!Opcionalno
+authentication host-mode multi-domain !kada imamo VoIP
+authentication violation restrict/replace !Vezano uz PortSecurity
+!Sve ostale naredbe su extra i ne koristimo ih
+
+Management opreme
+-------------------------------------------------------
+aaa group server radius SRM
+line vty 0 15
+transport input ssh
+login authentication SRM ili default
